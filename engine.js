@@ -54,7 +54,6 @@ class objectDisplacement {
 	}
 }
 
-
 /* 				Shapes
  *
  * Below are the classes of the shapes you can make. You
@@ -71,185 +70,50 @@ class objectDisplacement {
  */
 
 
-// polygonShape, shape of polygon to draw
-class polygonShape {
+var polygon = (...points) => ({
 	
-	points=[];	// array of points
-	endPoint={}; 	// end point
+	Polygon: points, 
+	
+	offset: (offsetx, offsety) => {
+		this.Polygon.forEach((point, index) => {
+		
+			point.x+=offsetx; point.y+=offsety
+			this.Polygon[index] = point;
+		})
+	},
 
-	constructor(...pointsToDraw){
+	draw: (path) => {this.Polygon.forEach((point) => {path.lineTo(point)}}
+});
 
-		for (var i in pointsToDraw) {
-			this.points.push(i);
-		}
-		
-		this.endPoint=this.points[this.points.length-1];
-	}
+var arc = (cp, sa, ea, r) => ({
+
+	centerPoint: cp,
+	startAngle: sa,
+	endAngle: ea,
+	radius: r,
+	endPoint: {x: arc.centerPoint.x+Math.cos(arc.endAngle)*arc.radius, 
+		   y: arc.centerPoint.y+Math.sin(arc.endAngle)*arc.radius};
 	
-	// offset each point from points, and update begin and end
-	offset(x, y){
+	offset: (offsetx, offsety) => {this.endPoint.x+=offsetx; this.endPoint.y+=offsety},
 	
-		for (var x = 0; x < this.points.length; x++) {
-			this.points[x].x+=x;
-			this.points[x].y+=y;
-		}
-		
-		this.endPoint=this.points[this.points.length-1];
-	}
-	
-	// draw the points onto the path and move to the end point
-	addToPath(path) {
-		
-		for (var x = 0; x < this.points.length; x++) {
-			
-			i=this.points[x];
-			path.lineTo(i.x, i.y);
-		}
+	draw: (path) => {
+		path.arc(this.centerPoint.x, this.centerPoint.y, this.radius, this.startAngle, this.endAngle); 
 		path.moveTo(this.endPoint.x, this.endPoint.y);
 	}
-}
+});
 
-// arcShape, shape of arc to draw
-class arcShape {
-
-	centerPoint = {};	// the center point to base the arc
+var drawShape = (path, beginPoint, offsetPoint, ...shapes) => {
 	
-	startAngle = 0;		// the starting angle to start arc
-	endAngle = 0;		// the ending angle to end arc
-	
-	radius = 0; 		// the radius of the circle of arc
-	
-	endPoint={};		// the end point of the arc
-	
-	constructor(centerPoint, startAngle, endAngle, radius) {
-		
-		this.centerPoint.x=centerPoint.x;
-		this.centerPoint.y=centerPoint.y;
-		
-		this.startAngle=startAngle;
-		this.endAngle=endAngle;
-		
-		this.radius = radius;
-		this.endPoint.x=this.centerPoint.x+Math.cos(this.endAngle)*this.radius;
-		this.endPoint.y=this.centerPoint.y+Math.sin(this.endAngle)*this.radius;
-	}
-	
-	// offset the center point, begin point, and end point
-	offset(x, y) {
-		this.centerPoint.x+=x;
-		this.centerPoint.y+=y;
-		this.endPoint.x=this.centerPoint.x+Math.cos(this.endAngle)*this.radius;
-		this.endPoint.y=this.centerPoint.y+Math.sin(this.endAngle)*this.radius;
-	}
-	
-	// draw the arc onto the path and move to the end point
-	addToPath(path) {
-		path.arc(this.centerPoint.x, this.centerPoint.y, this.radius, this.startAngle, this.endAngle);
-		path.moveTo(this.endPoint.x, this.endPoint.y);
-	}
-}
+	path.moveTo(beginPoint.x, beginPoint.y);
 
-// quadraticShape, shape of quadratic curve to draw
-class quadraticShape {
+	for (var shape in shapes) {
 
-	controlPoint = {};	// the control point to base curve
-	endPoint = {};		// end point of curve
-	
-	constructor(controlPoint, endPoint) {
-		this.controlPoint.x=controlPoint.x;
-		this.controlPoint.y=controlPoint.y;
-		this.endPoint.x=endPoint.x;
-		this.endPoint.y=endPoint.y;
-	}
-	
-	// offset the beginning, control, and end points
-	offset(x, y) {
-		this.controlPoint.x+=x;
-		this.controlPoint.y+=y;
-		this.endPoint.x+=x;
-		this.endPoint.y+=y;
+		shape.offset(offsetPoint.x, offsetPoint.y);
+		shape.draw(path);
 	}
 
-	// draw the quadratic curve onto the path
-	addToPath(path) {
-		path.quadraticCurveTo(this.controlPoint.x, this.controlPoint.y, this.endPoint.x, this.endPoint.y);
-		path.moveTo(this.endPoint.x, this.endPoint.y);
-	}
-
-}
-
-// bezierShape, shape of bezier curve to draw
-class bezierShape {
-
-	controlPointOne = {};	// first control point
-	controlPointTwo = {};	// second control point
-	endPoint = {};		// ending point
-
-	constructor(controlPointOne, controlPointTwo, endPoint){
-		
-		this.controlPointOne.x=controlPointOne.x;
-		this.controlPointOne.y=controlPointOne.y; 
-		
-		this.controlPointTwo.x=controlPointTwo.x; 
-		this.controlPointTwo.y=controlPointTwo.y; 
-		
-		this.endPoint.x=endpoint.x;
-		this.endPoint.y=endpoint.y;
-	}
-
-	// offset the beginning, control, and ending points
-	offset(x, y) {
-		
-		this.controlPointOne.x+=x;
-		this.controlPointOne.y+=y;
-		
-		this.controlPointTwo.x+=x;
-		this.controlPointTwo.y+=y;
-		
-		this.endPoint.x+=x;
-		this.endPoint.y+=y;
-	}
-	
-	// create a bezier curve from the begin to the end
-	addToPath(path) {
-		path.bezierCurveTo(this.controlPointOne.x, this.controlPointOne.y, this.controlPointTwo.x, this.controlPointTwo.y, this.endPoint.x, this.endPoint.y);
-		path.moveTo(this.endPoint.x, this.endPoint.y);
-	}
-}
-
-// the object shape class to draw the game object
-// 
-// bugs documented: this.shapes[j].addToPath is not a function
-class objectShape {
-
-	shapes = [];		// array of shape classes
-	path = new Path2D();	// path used to draw shapes
-
-	constructor(beginPoint, ...listOfShapes){
-		
-		let j = 0; 
-		this.path.moveTo(beginPoint.x, beginPoint.y);
-		for (var i in listOfShapes){
-			this.shapes.push(i);
-			this.shapes[j].addToPath(this.path);
-			j++;
-		}
-		
-		this.path.closePath();
-	}
-
-	// redraw the path with an offset
-	// set both params to 0 if no change is needed
-	draw(offsetx, offsety){
-		let updatedPath = new Path2D();
-		for (var x = 0;x < shapes.length; x++) {
-			shapes[x].offset(offsetx, offsety);
-			shapes[x].addToPath(updatedPath);
-		}
-		updatedPath.closePath();
-		this.path = updatedPath;
-	}
-}
+	path.closePath();
+};
 
 
 /*			Collision Detection
