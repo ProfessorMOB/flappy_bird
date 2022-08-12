@@ -1,6 +1,4 @@
 // TODO:
-// 	test point, objectDisplacement, and shapes classes
-// 	fix issues
 // 	test collider, game object, and game manager classes
 // 	fix issues
 
@@ -56,14 +54,14 @@ class objectDisplacement {
 
 /* 				Shapes
  *
- * Below are the classes of the shapes you can make. You
- * instantiate a new shape with them, and with the objectShape
- * class, you can offset and (re)draw them. 
+ * Below are the functions used to make the shapes. You build 
+ * a new shape with them, and with the shape function, you can 
+ * offset and (re)draw them. 
  * 
- * The polygonShape class has an array of points which are used to
+ * The polygon function has an array of points which are used to
  * draw a polygon. 
  *
- * The arcShape class has several arguments which are used to draw
+ * The arc function has several arguments which are used to draw
  * an arc. 
  *
  * And etc. etc.
@@ -72,48 +70,66 @@ class objectDisplacement {
 
 var polygon = (...points) => ({
 	
-	Polygon: points, 
+	Polygon: Array.from(points), 	// points of the polygon
 	
-	offset: (offsetx, offsety) => {
-		this.Polygon.forEach((point, index) => {
-		
-			point.x+=offsetx; point.y+=offsety
-			this.Polygon[index] = point;
-		})
-	},
+	offset(offsetx, offsety) {
 
-	draw: (path) => {this.Polygon.forEach((point) => {path.lineTo(point)}}
+		// offset each point in the Polygon array
+		for (var x = 0; x < this.Polygon.length; x++) {
+			this.Polygon[x].x+=offsetx; this.Polygon[x].y+=offsety;
+		}
+	},
+	
+	// draw the Polygon onto a path
+	draw(path) {this.Polygon.forEach((point) => {path.lineTo(point.x, point.y)})}
 });
+
 
 var arc = (cp, sa, ea, r) => ({
 
-	centerPoint: cp,
-	startAngle: sa,
-	endAngle: ea,
-	radius: r,
-	endPoint: {x: arc.centerPoint.x+Math.cos(arc.endAngle)*arc.radius, 
-		   y: arc.centerPoint.y+Math.sin(arc.endAngle)*arc.radius};
+	centerPoint: cp,		// the point in which the arc is centered
+	startAngle: sa,			// the angle to start at
+	endAngle: ea,			// the angle to end with
+	radius: r,			// radius of the circle the arc is going to be based on
+	endPoint: {			// the end point of the circle to move to
+		x: cp.x+Math.cos(ea)*r, 
+		y: cp.y+Math.sin(ea)*r
+	},
 	
-	offset: (offsetx, offsety) => {this.endPoint.x+=offsetx; this.endPoint.y+=offsety},
+	// offset the center and end points
+	offset(offsetx, offsety) {this.endPoint.x+=offsetx; this.endPoint.y+=offsety; this.centerPoint.x+=offsetx; this.centerPoint.y+=offsety},
 	
-	draw: (path) => {
-		path.arc(this.centerPoint.x, this.centerPoint.y, this.radius, this.startAngle, this.endAngle); 
+	draw(path) {
+		path.arc(this.centerPoint.x, this.centerPoint.y, 
+			this.radius, this.startAngle, this.endAngle); 
+		
 		path.moveTo(this.endPoint.x, this.endPoint.y);
 	}
 });
 
-var drawShape = (path, beginPoint, offsetPoint, ...shapes) => {
+// the shape function, it returns a path to draw with ctx.fill or ctx.stroke
+var shape = (beginPoint, ...shapes) => ({
 	
-	path.moveTo(beginPoint.x, beginPoint.y);
+	begin: beginPoint, 
+	shapeList: shapes,
+	drawShape(offsetPoint) {
+		let path = new Path2D();
 
-	for (var shape in shapes) {
+		this.begin.x+=offsetPoint.x; this.begin.y+=offsetPoint.y;
+		path.moveTo(this.begin.x, this.begin.y);
 
-		shape.offset(offsetPoint.x, offsetPoint.y);
-		shape.draw(path);
+		for (var shape of this.shapeList) {
+			
+			shape.offset(offsetPoint.x, offsetPoint.y);
+			shape.draw(path);
+		}
+
+		path.closePath();
+
+		return path;
 	}
 
-	path.closePath();
-};
+});
 
 
 /*			Collision Detection
