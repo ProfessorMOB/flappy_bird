@@ -68,6 +68,7 @@ class objectDisplacement {
  */
 
 
+// function to create a polygon object
 var polygon = (...points) => ({
 	
 	Polygon: Array.from(points), 	// points of the polygon
@@ -84,7 +85,7 @@ var polygon = (...points) => ({
 	draw(path) {this.Polygon.forEach((point) => {path.lineTo(point.x, point.y)})}
 });
 
-
+// functiont to create an arc object
 var arc = (cp, sa, ea, r) => ({
 
 	centerPoint: cp,		// the point in which the arc is centered
@@ -111,7 +112,8 @@ var arc = (cp, sa, ea, r) => ({
 var shape = (beginPoint, ...shapes) => ({
 	
 	begin: beginPoint, 
-	shapeList: shapes,
+	shapeList: shapes,		// the shapes to draw the final
+
 	drawShape(offsetPoint) {
 		let path = new Path2D();
 
@@ -149,10 +151,10 @@ class objectCollider{
 	width = 0;		// the width of the box
 	height = 0;		// the height of the box
 
-	constructor(startPoint, width, height) {
+	constructor(start, width, height) {
 
-		this.startPoint.x=startPoint.x;
-		this.startPoint,y=startPoint.y;
+		this.startPoint.x=start.x;
+		this.startPoint.y=start.y;
 		
 		this.width=width;
 		this.height=height;
@@ -170,7 +172,7 @@ class gameObject {
 	
 	name = "";			// name of game object
 	shape = {};			// shape of game object 
-	
+	shapePath = undefined; 
 	// displacement properties
 	displacement = {};		// how game object moves
 	usePhysics = true;		// enable physics, enabled
@@ -197,12 +199,20 @@ class gameObject {
 	}
 
 	// move game object to desired position from offset
-	move(offsetx, offsety){
-
-		this.shape.draw(offsetx, offsety);
+	move(deltaTime){
 		
-		this.collider.startPoint.x+=offsetx;
-		this.collider.startPoint.y+=offsety;
+		if (!deltaTime) return;
+		
+		let velx = this.displacement.velx / deltaTime;
+		let vely = this.displacement.vely / deltaTime;
+
+		this.shapePath = this.shape.drawShape({x: velx, y: vely});
+		
+		this.collider.startPoint.x+=velx;
+		this.collider.startPoint.y+=vely;
+
+		velx += this.displacement.accx / deltaTime;
+		vely += this.displacement.accy / deltaTime; 
 	}
 	
 	// add listener to execute function(s) after collision
@@ -210,55 +220,62 @@ class gameObject {
 
 		this.collisionListeners.push(listener);
 	}
-
 	addGameObjectAction(action){
 
 		this.gameObjectActions.push(action);
 	}
 }
 
-
+// the game manager to process the game
 class gameManager {
 	
-	gameObjects = [];
-	canvas = undefined;
-	ctx = undefined;
-
+	previousTime = 0;	// the previous timestamp
+	gameObjects = [];	// array of gameObjects
+	canvas = undefined;	// the canvas
+	ctx = undefined;	// the context
+	
+	// create the manager with the canvas and gameObjects
 	constructor(canvas, ...gameObjects) {
-		for (i in gameObjects) {
-			this.gameObjects.push(i);
-		}
+		
+		this.gameObjects = [...gameObjects];
+		
 		this.canvas = canvas;
 		this.ctx = canvas.getContext('2d');
 	}
 	
+	// retrieve the game object by its name
 	getGameObjectIndexByName(name){
-		for(var x = 0; x < gameObjects.length; x++) {
-			if (gameObjects[x].name == name) {
+		for(var x = 0; x < this.gameObjects.length; x++) {
+			if (this.gameObjects[x].name == name) {
 				return x
 			}
 		}
 		return -1;
 	}
-
-	updateGameContext(){
+	
+	// the function we run on loop
+	gameLoop(timestamp){
 		
-		this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+		let deltaTime = timestamp - this.previousTime;		// we retrieve the change in time from now and the last time
+		this.previous = timestamp;				// reset the time
+		
+		
+		console.log(deltaTime);
 
 		for (var x = 0; x < this.gameObjects.length; x++){
 			
+			// execute the game object's actions
 			for ( var j = 0; j < this.gameObjects[x].gameObjectActions.length; j++) {
 				this.gameObjects[x].gameObjectActions[j]();
 			}
-
+			
+			// we update the position depending on the velocity and acceleration
 			if (this.gameObjects[x].usePhysics == true) {
 				
-				this.gameObjects[x].move(this.gameObjects[x].displacement.velx, this.gameObjects[x].displacement.vely);
-				
-				this.gameObjects[x].displacement.velx+=this.gameObjects[x].displacement.accx;
-				this.gameObjects[x].displacement.vely+=this.gameObjects[x].displacement.accy;
+				this.gameObjects[x].move(deltaTime); // the deltatime to be inserted
 			}
-
+			
+			// execute collision listeners upon a collision
 			if (this.gameObjects[x].useCollider == true) {
 
 				for(var f=1+x; f < this.gameObjects.length; f++){
@@ -272,21 +289,22 @@ class gameManager {
 					}
 				}
 			}
+			
+			this.ctx.stroke(this.gameObjects[x].shapePath);
 		}
+		requestAnimationFrame(gameLoop);
 	}
 }
 
-/*
+
 export {
 	point, 
 	objectDisplacement, 
-	polygonShape, 
-	arcShape, 
-	quadraticShape, 
-	bezierShape, 
-	objectShape, 
+	polygon, 
+	arc, 
+	shape, 
 	objectCollider, 
 	gameObject, 
 	gameManager
 };
-*/
+

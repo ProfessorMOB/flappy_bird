@@ -2,10 +2,31 @@
 
 <html>
 	<head>
-		<script src="/engine.js"></script>
+
+		<script type="module" defer>
+		
+		import {point, objectDisplacement, polygon, arc, shape, objectCollider, gameObject, gameManager} from "/engine.js";
+
+		var scooper = new gameObject(
+			"scooper", 
+			new objectDisplacement(10, 0, 0, 0),
+			shape(new point(10, 10), polygon(new point(50, 50), new point(75, 75)), arc(new point(80, 80), 0, 3, 20)), 
+			new objectCollider(new point(10, 10), 50, 50)
+		);
+
+		var cnvs = document.getElementById("canvas"); 
+		scooper.addCollisionListener(function(){
+    			console.log("Houston we have a problem. ");
+		});
+		
+		var manager = new gameManager(cnvs, scooper);
+		
+		manager.gameLoop();
+
+		</script>
 	</head>
 
 	<body>
-		<canvas id="canvas" width="100px" height="100px"></canvas>
+		<canvas id="canvas" width="1000px" height="1000px"></canvas>
 	</body>
 </html>
