@@ -5,7 +5,7 @@
 
 		<script type="module" defer>
 		
-		import {point, objectDisplacement, polygon, arc, shape, objectCollider, gameObject, gameManager} from "/engine.js";
+		import {point, objectDisplacement, polygon, arc, shape, objectCollider, gameObject, gameManager, startGameLoop} from "/engine.js";
 
 		var scooper = new gameObject(
 			"scooper", 
@@ -15,13 +15,16 @@
 		);
 
 		var cnvs = document.getElementById("canvas"); 
-		scooper.addCollisionListener(function(){
+		scooper.addCollisionListener(function(manager){
     			console.log("Houston we have a problem. ");
 		});
 		
 		var manager = new gameManager(cnvs, scooper);
 		
-		manager.gameLoop();
+		console.log(manager);
+		console.log(scooper);
+		
+		requestAnimationFrame(startGameLoop(manager));
 
 		</script>
 	</head>

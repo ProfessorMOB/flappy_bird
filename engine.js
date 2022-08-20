@@ -113,22 +113,25 @@ var shape = (beginPoint, ...shapes) => ({
 	
 	begin: beginPoint, 
 	shapeList: shapes,		// the shapes to draw the final
-
-	drawShape(offsetPoint) {
+	
+	set drawShape(offsetPoint) {
 		let path = new Path2D();
 
 		this.begin.x+=offsetPoint.x; this.begin.y+=offsetPoint.y;
 		path.moveTo(this.begin.x, this.begin.y);
 
-		for (var shape of this.shapeList) {
+		for (var shapes of this.shapeList) {
 			
-			shape.offset(offsetPoint.x, offsetPoint.y);
-			shape.draw(path);
+			shapes.offset(offsetPoint.x, offsetPoint.y);
+			shapes.draw(path);
 		}
 
 		path.closePath();
-
-		return path;
+		console.log(this);
+		this.path = path;
+	},
+	get shapePath(){
+		return this.path;
 	}
 
 });
@@ -172,7 +175,7 @@ class gameObject {
 	
 	name = "";			// name of game object
 	shape = {};			// shape of game object 
-	shapePath = undefined; 
+
 	// displacement properties
 	displacement = {};		// how game object moves
 	usePhysics = true;		// enable physics, enabled
@@ -201,12 +204,12 @@ class gameObject {
 	// move game object to desired position from offset
 	move(deltaTime){
 		
-		if (!deltaTime) return;
+		if (deltaTime == NaN || deltaTime == 0) return -1;
 		
 		let velx = this.displacement.velx / deltaTime;
 		let vely = this.displacement.vely / deltaTime;
 
-		this.shapePath = this.shape.drawShape({x: velx, y: vely});
+		this.shape.drawShape = {x: velx, y: vely};
 		
 		this.collider.startPoint.x+=velx;
 		this.collider.startPoint.y+=vely;
@@ -229,14 +232,15 @@ class gameObject {
 // the game manager to process the game
 class gameManager {
 	
-	previousTime = 0;	// the previous timestamp
 	gameObjects = [];	// array of gameObjects
 	canvas = undefined;	// the canvas
 	ctx = undefined;	// the context
-	
+	previousTime;
+
 	// create the manager with the canvas and gameObjects
 	constructor(canvas, ...gameObjects) {
 		
+		this.previousTime = 0;
 		this.gameObjects = [...gameObjects];
 		
 		this.canvas = canvas;
@@ -252,50 +256,64 @@ class gameManager {
 		}
 		return -1;
 	}
+}
+
+var startGameLoop = (GameLoopManager) => {
+
+	var manager = GameLoopManager;
 	
 	// the function we run on loop
-	gameLoop(timestamp){
-		
-		let deltaTime = timestamp - this.previousTime;		// we retrieve the change in time from now and the last time
-		this.previous = timestamp;				// reset the time
-		
-		
-		console.log(deltaTime);
+	function gameLoop(GameManager, timestamp){
+		GameManager.ctx.clearRect(0, 0, GameManager.canvas.width, GameManager.canvas.height);
 
-		for (var x = 0; x < this.gameObjects.length; x++){
+		// the deltaTime and previousTime variables force the object to do only the exact same amount of work each second
+		let deltaTime = timestamp - GameManager.previousTime;
+		GameManager.previousTime = timestamp;
+		
+		// this detects whether we get an invalid deltaTime
+		let detectMoveTimeError;
+		
+		// ahhh the loop that does all the work. this is not the game loop, this loops through all of the gameObjects and 
+		// performs the gameObject actions, collisionListeners, and movement
+		for (var x = 0; x < GameManager.gameObjects.length; x++){
 			
 			// execute the game object's actions
-			for ( var j = 0; j < this.gameObjects[x].gameObjectActions.length; j++) {
-				this.gameObjects[x].gameObjectActions[j]();
+			for ( var j = 0; j < GameManager.gameObjects[x].gameObjectActions.length; j++) {
+				GameManager.gameObjects[x].gameObjectActions[j](GameManager);
 			}
 			
 			// we update the position depending on the velocity and acceleration
-			if (this.gameObjects[x].usePhysics == true) {
+			if (GameManager.gameObjects[x].usePhysics == true) {
 				
-				this.gameObjects[x].move(deltaTime); // the deltatime to be inserted
+				// detect whether there's an error with the deltaTime
+				detectMoveTimeError = GameManager.gameObjects[x].move(deltaTime); // the deltatime to be inserted
 			}
 			
 			// execute collision listeners upon a collision
-			if (this.gameObjects[x].useCollider == true) {
-
-				for(var f=1+x; f < this.gameObjects.length; f++){
-
-					if(this.gameObjects[x].collider.checkCollision(this.gameObjects[f].collider)) {
+			if (GameManager.gameObjects[x].useCollider == true) {
+				
+				// loop through the gameObjects starting from next to the current one
+				for(var f=1+x; f < GameManager.gameObjects.length; f++){
 					
-						for(var o = 0; o < this.gameObjects[x].collisionListeners.length; o++){
+					// check if we collided with the gameObject
+					if(GameManager.gameObjects[x].collider.checkCollision(GameManager.gameObjects[f].collider)) {
 						
-							this.gameObjects[x].collisionListeners[o]();
+						// loop through and execute the collision listeners
+						for(var o = 0; o < GameManager.gameObjects[x].collisionListeners.length; o++){
+							GameManager.gameObjects[x].collisionListeners[o](GameManager);
 						}
 					}
 				}
 			}
-			
-			this.ctx.stroke(this.gameObjects[x].shapePath);
+			// draw the gameObject
+			if (detectMoveTimeError!=-1) GameManager.ctx.stroke(GameManager.gameObjects[x].shape.shapePath);
 		}
-		requestAnimationFrame(gameLoop);
+		// RECURSION!!!!
+		requestAnimationFrame(startGameLoop(GameManager));
 	}
+	
+	return function(timestamp){gameLoop(manager, timestamp);};
 }
-
 
 export {
 	point, 
@@ -305,6 +323,7 @@ export {
 	shape, 
 	objectCollider, 
 	gameObject, 
-	gameManager
+	gameManager,
+	startGameLoop
 };
 
