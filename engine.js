@@ -214,8 +214,8 @@ class gameObject {
 		this.collider.startPoint.x+=velx;
 		this.collider.startPoint.y+=vely;
 
-		velx += this.displacement.accx / deltaTime;
-		vely += this.displacement.accy / deltaTime; 
+		this.displacement.velx += this.displacement.accx;
+		this.displacement.vely += this.displacement.accy; 
 	}
 	
 	// add listener to execute function(s) after collision
