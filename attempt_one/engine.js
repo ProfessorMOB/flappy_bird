@@ -1,6 +1,5 @@
 // TODO:
-// 	test collider, game object, and game manager classes
-// 	fix issues
+//	add the ability to draw images
 
 /*			Points
  * 
@@ -214,8 +213,8 @@ class gameObject {
 		this.collider.startPoint.x+=velx;
 		this.collider.startPoint.y+=vely;
 
-		this.displacement.velx += this.displacement.accx;
-		this.displacement.vely += this.displacement.accy; 
+		this.displacement.velx += this.displacement.accx / deltaTime;
+		this.displacement.vely += this.displacement.accy / deltaTime; 
 	}
 	
 	// add listener to execute function(s) after collision

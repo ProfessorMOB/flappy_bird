@@ -15,14 +15,10 @@
 		);
 
 		var cnvs = document.getElementById("canvas"); 
-		scooper.addCollisionListener(function(manager){
+		scooper.addGameObjectAction(function(manager){
     			console.log("Houston we have a problem. ");
 		});
-		
 		var manager = new gameManager(cnvs, scooper);
-		
-		console.log(manager);
-		console.log(scooper);
 		
 		requestAnimationFrame(startGameLoop(manager));
 
