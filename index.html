@@ -5,19 +5,25 @@
 		<title>Flappy Bird!</title>
 		<!-- <script type="module" src="./engine.js" defer></script> -->
 		<!-- <script type="module" src="game.js"></script> -->
-		<script type="module">
-			import {initGame} from "./game.js";
-			initGame(); 
-		</script>
+		<script src="game.js" defer></script>
+		<!-- <script type="module" src="game.js" defer> -->
+		<!-- 	import {initGame} from "./game.js"; -->
+		<!-- 	initGame();  -->
+		<!-- </script> -->
 		<style>
-		document, body {
+		* {
 			padding:0px;
 			margin:0px;
+		}
+		canvas {
+			background: #eee;
+			display: block;
+			margin: auto; 
 		}
 		</style>
 	</head>
 
 	<body>
-		<canvas id = 'canvas'></canvas>
+		<canvas id="canvas" width="480" height="360"></canvas>
 	</body>
 </html>
